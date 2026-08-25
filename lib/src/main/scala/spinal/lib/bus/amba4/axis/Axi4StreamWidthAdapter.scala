@@ -21,6 +21,9 @@ object Axi4StreamWidthAdapter {
  */
 class Axi4StreamWidthAdapter(inConfig: Axi4StreamConfig, outConfig: Axi4StreamConfig, compact: Boolean = false) extends Component {
 
+  require(!inConfig.useUser || inConfig.isUserPerByte,
+    "Axi4StreamWidthAdapter only supports byte-lane-associated TUSER; adapt transfer-associated TUSER explicitly")
+
   val needsValid = !inConfig.useKeep || !compact
 
   /*

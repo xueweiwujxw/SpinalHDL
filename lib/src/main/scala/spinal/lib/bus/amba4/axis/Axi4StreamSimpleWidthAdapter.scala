@@ -21,6 +21,8 @@ object Axi4StreamSimpleWidthAdapter {
  */
 class Axi4StreamSimpleWidthAdapter(inConfig: Axi4StreamConfig, outWidth: Int) extends Component {
   val inWidth = inConfig.dataWidth
+  require(!inConfig.useUser || inConfig.isUserPerByte || inWidth == outWidth,
+    "Axi4StreamSimpleWidthAdapter cannot change data width when TUSER is transfer-associated; adapt TUSER explicitly")
   assert(inWidth % outWidth == 0 || inWidth % outWidth == inWidth || inConfig.useKeep, "Input and output widths must be integer multiples or must support TKEEP!")
 
   val outConfig = inConfig.copy(dataWidth = outWidth)

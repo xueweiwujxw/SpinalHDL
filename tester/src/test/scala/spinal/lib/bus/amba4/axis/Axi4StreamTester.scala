@@ -36,6 +36,33 @@ case class Axi4StreamFragmentFixture[T <: Data](config: Axi4StreamConfig, outTyp
 
 class Axi4StreamTester extends SpinalAnyFunSuite {
 
+  test("user width association") {
+    assert(Axi4StreamConfig(dataWidth = 4, useUser = true, userWidth = 2).userBitsWidth == 8)
+    assert(Axi4StreamConfig(dataWidth = 4, useUser = true, userWidthBits = 3).userBitsWidth == 3)
+
+    SpinalVerilog(new Component {
+      val laneSource = slave(Axi4Stream(Axi4StreamConfig(dataWidth = 4, useUser = true, userWidth = 2)))
+      val laneSink = master(Axi4Stream(Axi4StreamConfig(dataWidth = 4, useUser = true, userWidth = 2)))
+      val transferSource = slave(Axi4Stream(Axi4StreamConfig(dataWidth = 2, useUser = true, userWidthBits = 2)))
+      val transferSink = master(Axi4Stream(Axi4StreamConfig(dataWidth = 4, useUser = true, userWidthBits = 3)))
+      val compactSource = slave(Axi4Stream(Axi4StreamConfig(dataWidth = 4, useKeep = true, useUser = true, userWidthBits = 3)))
+      val compactSink = master(Axi4Stream(compactSource.config))
+
+      laneSink << laneSource
+      transferSink << transferSource
+      compactSink << Axi4StreamSparseCompactor(compactSource)
+
+      assert(laneSource.user.getBitsWidth == 8)
+      assert(transferSource.user.getBitsWidth == 2)
+      assert(transferSink.user.getBitsWidth == 3)
+    })
+  }
+
+  test("user width configuration validation") {
+    assertThrows[IllegalArgumentException](Axi4StreamConfig(dataWidth = 4, useUser = true))
+    assertThrows[IllegalArgumentException](Axi4StreamConfig(dataWidth = 4, useUser = true, userWidth = 1, userWidthBits = 1))
+  }
+
   def duplexTest(dut: Axi4StreamEndianFixture[Bits]): Unit = {
     dut.clockDomain.forkStimulus(10)
 
